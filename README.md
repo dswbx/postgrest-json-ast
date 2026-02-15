@@ -2,8 +2,6 @@
 
 Translates raw `Request` objects into a structured AST representing PostgREST operations. Parses the URL path, query parameters, headers (Prefer, Accept, schema profiles), and body into a single typed `AST` object covering queries, inserts, updates, deletes, upserts, and RPC calls.
 
-![Debugger UI](screen.png)
-
 ## Usage
 
 ```ts
@@ -37,6 +35,8 @@ bun test
 ```
 
 ## Debugger
+
+![Debugger UI](screen.png)
 
 Interactive UI for building PostgREST requests and viewing the resulting AST in real time.
 
