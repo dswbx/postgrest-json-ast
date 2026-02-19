@@ -252,6 +252,84 @@ export function buildRequest(state: FormState): Request {
   return new Request(url, init)
 }
 
+export function parseRequestString(input: string): Partial<FormState> {
+  let method: FormState['method'] = 'GET'
+  let rawUrl = input.trim()
+
+  // Handle HTTP request line: "GET /path?query HTTP/1.1"
+  const httpLineMatch = rawUrl.match(/^(GET|POST|PATCH|DELETE|HEAD)\s+(\S+)/)
+  if (httpLineMatch) {
+    method = httpLineMatch[1] as FormState['method']
+    rawUrl = httpLineMatch[2]
+  }
+
+  let url: URL
+  try {
+    url = new URL(rawUrl.startsWith('/') ? `http://localhost:3000${rawUrl}` : rawUrl)
+  } catch {
+    return {}
+  }
+
+  const pathname = url.pathname
+  let resourceType: FormState['resourceType'] = 'table'
+  let resourceName = ''
+
+  const rpcMatch = pathname.match(/\/rest\/v1\/rpc\/([^/]+)/)
+  const tableMatch = pathname.match(/\/rest\/v1\/([^/]+)/)
+  if (rpcMatch) {
+    resourceType = 'rpc'
+    resourceName = rpcMatch[1]
+  } else if (tableMatch) {
+    resourceType = 'table'
+    resourceName = tableMatch[1]
+  } else {
+    const segs = pathname.split('/').filter(Boolean)
+    resourceName = segs[segs.length - 1] || ''
+  }
+
+  const params = url.searchParams
+  const select = params.get('select') || ''
+  const limit = params.get('limit') || ''
+  const offset = params.get('offset') || ''
+  const onConflict = params.get('on_conflict') || ''
+  const columns = params.get('columns') || ''
+
+  const orders: OrderEntry[] = []
+  const orderStr = params.get('order')
+  if (orderStr) {
+    for (const part of orderStr.split(',')) {
+      const segs = part.split('.')
+      const column = segs[0]
+      const direction = segs[1] === 'desc' ? 'desc' : ('asc' as const)
+      const nullsPart = segs[2] || ''
+      const nulls =
+        nullsPart === 'nullsfirst' ? 'nullsfirst' : nullsPart === 'nullslast' ? 'nullslast' : ('' as const)
+      if (column) orders.push({ column, direction, nulls })
+    }
+  }
+
+  const knownParams = new Set(['select', 'order', 'limit', 'offset', 'on_conflict', 'columns'])
+  const knownOps = new Set(FILTER_OPERATORS.map((f) => f.op))
+  const filters: Filter[] = []
+  for (const [key, value] of params.entries()) {
+    if (knownParams.has(key)) continue
+    const dotIdx = value.indexOf('.')
+    if (dotIdx > 0) {
+      const op = value.slice(0, dotIdx)
+      const val = value.slice(dotIdx + 1)
+      if (knownOps.has(op as never)) {
+        filters.push({ column: key, operator: op, value: val })
+      } else {
+        filters.push({ column: key, operator: '', value })
+      }
+    } else {
+      filters.push({ column: key, operator: '', value })
+    }
+  }
+
+  return { method, resourceType, resourceName, select, limit, offset, onConflict, columns, orders, filters }
+}
+
 export function buildRequestPreview(state: FormState, encode = false): string {
   const path =
     state.resourceType === 'rpc'
