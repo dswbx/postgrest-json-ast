@@ -48,6 +48,10 @@ export { resolveUpsertParams } from './resolvers/upsert-params.js'
 export { OPERATORS, isFilter, parseOperator, RESERVED_KEYS } from './utils/operators.js'
 export { parseInList, parseArrayLiteral, coerceValue } from './utils/values.js'
 
+// Re-export deparser
+export { deparse, createDeparser } from './deparser/index.js'
+export type { Dialect, DeparseResult, DialectConfig, OperatorHandler } from './deparser/index.js'
+
 /**
  * Create a translator with optional config overrides.
  */

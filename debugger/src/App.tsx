@@ -1,14 +1,18 @@
-import { useState, useEffect, useRef } from 'react'
-import { translate } from 'postgrest-ast'
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { translate, deparse } from 'postgrest-ast'
+import type { AST, DeparseResult } from 'postgrest-ast'
 import type { FormState } from './state'
 import { initialState, buildRequest, PRESETS, parseRequestString } from './state'
 import { RequestForm } from './components/RequestForm'
 import { RequestPreview } from './components/RequestPreview'
 import { AstOutput } from './components/AstOutput'
+import { SqlPreview } from './components/SqlPreview'
+
+type SqlResult = { result?: DeparseResult; error?: string }
 
 export default function App() {
   const [state, setState] = useState<FormState>(initialState)
-  const [ast, setAst] = useState<unknown>(null)
+  const [ast, setAst] = useState<AST | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [urlInput, setUrlInput] = useState('')
   const [activePreset, setActivePreset] = useState('')
@@ -31,6 +35,18 @@ export default function App() {
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [state])
+
+  const pgSql = useMemo<SqlResult>(() => {
+    if (!ast) return {}
+    try { return { result: deparse(ast, 'postgres') } }
+    catch (e) { return { error: e instanceof Error ? e.message : String(e) } }
+  }, [ast])
+
+  const sqliteSql = useMemo<SqlResult>(() => {
+    if (!ast) return {}
+    try { return { result: deparse(ast, 'sqlite') } }
+    catch (e) { return { error: e instanceof Error ? e.message : String(e) } }
+  }, [ast])
 
   const loadPreset = (idx: number) => {
     const preset = PRESETS[idx]
@@ -95,6 +111,9 @@ export default function App() {
           <AstOutput ast={ast} error={error} />
         </div>
       </div>
+      <footer className="border-t border-gray-800 p-4 shrink-0">
+        <SqlPreview postgres={pgSql} sqlite={sqliteSql} />
+      </footer>
     </div>
   )
 }
