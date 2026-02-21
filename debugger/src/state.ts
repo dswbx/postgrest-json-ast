@@ -220,12 +220,28 @@ export const PRESETS: Preset[] = [
       },
    },
    {
+      label: "Logical operators",
+      url: "/people?grade=gte.90&student=is.true&or=(age.eq.14,not.and(age.gte.11,age.lte.17))",
+   },
+   {
       label: "Horizontal filtering",
       url: "/rest/v1/people?age=gte.18&student=is.true",
    },
    {
       label: "Vertical filtering",
       url: "/rest/v1/people?select=first_name,age",
+   },
+   {
+      label: "Aggregates",
+      url: "/orders?select=sum:amount.sum(),avg:amount.avg(),observation_count:observation.count(),order_details->tax_amount::numeric.sum(),order_date",
+   },
+   {
+      label: "Aggregates inside embeds",
+      url: "/customers?select=name,city,state,orders(amount.sum(),order_date)",
+   },
+   {
+      label: "Range filtering",
+      url: '/survey?or=(age_range.adj."[18,21)",age_range.cs."[30,35]")',
    },
 ];
 
