@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { translate, deparse } from 'postgrest-ast'
 import type { AST, DeparseResult } from 'postgrest-ast'
 import type { FormState } from './state'
-import { initialState, buildRequest, PRESETS, parseRequestString } from './state'
+import { initialState, buildRequest, PRESETS, parseRequestString, resolvePreset } from './state'
 import { RequestForm } from './components/RequestForm'
 import { RequestPreview } from './components/RequestPreview'
 import { AstOutput } from './components/AstOutput'
@@ -49,8 +49,9 @@ export default function App() {
   }, [ast])
 
   const loadPreset = (idx: number) => {
-    const preset = PRESETS[idx]
-    if (preset) {
+    const raw = PRESETS[idx]
+    if (raw) {
+      const preset = resolvePreset(raw)
       setState({ ...initialState, ...preset.state })
       setUrlInput('')
       setActivePreset(String(idx))
